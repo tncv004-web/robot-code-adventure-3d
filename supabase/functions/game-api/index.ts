@@ -138,7 +138,12 @@ Deno.serve(async (req: Request) => {
       if(!auth.startsWith("Bearer ")) return fail("กรุณาเข้าสู่ระบบคุณครู",401);
       const {data:userData,error:authError}=await db.auth.getUser(auth.substring(7));
       if(authError||!userData?.user) return fail("บัญชีผู้ใช้ไม่ถูกต้อง",401);
-      const {data:teacher}=await db.from("game_teacher_access").select("user_id").eq("user_id",userData.user.id).maybeSingle();
+      const {data:teacher,error:teacherAccessError}=await db.from("game_teacher_access").select("user_id").eq("user_id",userData.user.id).maybeSingle();
+      // Do not mistake a database authorization/configuration failure for a missing teacher role.
+      if(teacherAccessError) {
+        console.error("teacher-access database query failed:",teacherAccessError.code||"unknown");
+        return fail("ระบบตรวจสอบสิทธิ์คุณครูขัดข้อง โปรดลองอีกครั้ง",503);
+      }
       if(!teacher) return fail("บัญชีนี้ยังไม่ได้รับสิทธิ์คุณครู",403);
       const {data:records,error}=await db.from("game_sessions")
         .select("id,mode,started_at,finished_at,total_score,game_students(full_name,classroom),game_mission_results(mission_number,score,duration_seconds,mistakes)")
