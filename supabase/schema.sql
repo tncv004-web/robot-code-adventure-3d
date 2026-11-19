@@ -57,3 +57,12 @@ revoke all on table public.game_sessions from anon, authenticated;
 revoke all on table public.game_mission_results from anon, authenticated;
 revoke all on table public.game_teacher_access from anon, authenticated;
 revoke all on sequence public.game_mission_results_id_seq from anon, authenticated;
+
+-- Edge Function uses a server-only secret key. Explicitly grant the service_role
+-- the minimum privileges needed; RLS remains enabled and anon/authenticated
+-- retain no direct table access.
+grant select, insert on table public.game_students to service_role;
+grant select, insert, update on table public.game_sessions to service_role;
+grant select, insert on table public.game_mission_results to service_role;
+grant select on table public.game_teacher_access to service_role;
+grant usage on sequence public.game_mission_results_id_seq to service_role;
